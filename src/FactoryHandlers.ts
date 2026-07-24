@@ -1,9 +1,6 @@
-import {
-  StableFactory_TokenCreated_handler,
-} from "../generated/src/Handlers.gen";
+import { indexer } from "envio";
 
-// Handle TokenCreated events from SenditTokenFactory
-StableFactory_TokenCreated_handler(({ event, context }) => {
+indexer.onEvent({ contract: "StableFactory", event: "TokenCreated" } as any, async ({ event, context }: any) => {
   context.Token.set({
     id: event.params.token.toLowerCase(),
     address: event.params.token.toLowerCase(),
@@ -14,11 +11,10 @@ StableFactory_TokenCreated_handler(({ event, context }) => {
     pool: event.params.pool.toLowerCase(),
     chainId: event.chainId,
     supply: event.params.supply,
-    createdAt: event.blockTimestamp,
-    createdBlock: event.blockNumber,
+    createdAt: event.block.timestamp,
+    createdBlock: event.block.number,
   });
 
-  // Initialize pool entity with token mapping
   context.LiquidityPool.set({
     id: event.params.pool.toLowerCase(),
     token: event.params.token.toLowerCase(),
@@ -28,7 +24,7 @@ StableFactory_TokenCreated_handler(({ event, context }) => {
     cumulativeVolume1: 0n,
     swapCount: 0,
     lastPrice: 0n,
-    lastUpdateTimestamp: BigInt(event.blockTimestamp),
-    lastUpdateBlock: BigInt(event.blockNumber),
+    lastUpdateTimestamp: BigInt(event.block.timestamp),
+    lastUpdateBlock: BigInt(event.block.number),
   });
 });

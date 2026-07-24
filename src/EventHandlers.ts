@@ -1,53 +1,42 @@
-import {
-  StableV3Pool_Swap_loader,
-  StableV3Pool_Swap_handler,
-} from "../generated/src/Handlers.gen";
+import { indexer } from "envio";
 
-// Load existing pool entity
-StableV3Pool_Swap_loader(({ event, context }) => {
-  context.LiquidityPool.load(event.srcAddress.toString());
-});
+indexer.onEvent({ contract: "StableV3Pool", event: "Swap" } as any, async ({ event, context }: any) => {
+  const poolId = event.srcAddress.toLowerCase();
+  const existing = await context.LiquidityPool.get(poolId);
 
-// Handle Swap events from V3 pools
-StableV3Pool_Swap_handler(({ event, context }) => {
-  const poolId = event.srcAddress.toString();
-  let pool = context.LiquidityPool.get(poolId);
+  const vol0 = event.params.amount0 < 0n ? -event.params.amount0 : event.params.amount0;
+  const vol1 = event.params.amount1 < 0n ? -event.params.amount1 : event.params.amount1;
 
-  if (pool == undefined) {
-    pool = {
+  if (!existing) {
+    context.LiquidityPool.set({
       id: poolId,
-      token: "", // Will be set when we know the token
+      token: "",
       chainId: event.chainId,
       tick: event.params.tick,
-      cumulativeVolume0: event.params.amount0 < 0n ? -event.params.amount0 : event.params.amount0,
-      cumulativeVolume1: event.params.amount1 < 0n ? -event.params.amount1 : event.params.amount1,
+      cumulativeVolume0: vol0,
+      cumulativeVolume1: vol1,
       swapCount: 1,
       lastPrice: event.params.sqrtPriceX96,
-      lastUpdateTimestamp: BigInt(event.blockTimestamp),
-      lastUpdateBlock: BigInt(event.blockNumber),
-    };
+      lastUpdateTimestamp: BigInt(event.block.timestamp),
+      lastUpdateBlock: BigInt(event.block.number),
+    });
   } else {
-    const vol0 = event.params.amount0 < 0n ? -event.params.amount0 : event.params.amount0;
-    const vol1 = event.params.amount1 < 0n ? -event.params.amount1 : event.params.amount1;
-    pool = {
-      ...pool,
+    context.LiquidityPool.set({
+      ...existing,
       tick: event.params.tick,
-      cumulativeVolume0: pool.cumulativeVolume0 + vol0,
-      cumulativeVolume1: pool.cumulativeVolume1 + vol1,
-      swapCount: pool.swapCount + 1,
+      cumulativeVolume0: existing.cumulativeVolume0 + vol0,
+      cumulativeVolume1: existing.cumulativeVolume1 + vol1,
+      swapCount: existing.swapCount + 1,
       lastPrice: event.params.sqrtPriceX96,
-      lastUpdateTimestamp: BigInt(event.blockTimestamp),
-      lastUpdateBlock: BigInt(event.blockNumber),
-    };
+      lastUpdateTimestamp: BigInt(event.block.timestamp),
+      lastUpdateBlock: BigInt(event.block.number),
+    });
   }
 
-  context.LiquidityPool.set(pool);
-
-  // Store individual swap
   context.Swap.set({
-    id: event.transactionHash + "-" + event.logIndex.toString(),
+    id: event.transaction.hash + "-" + event.logIndex.toString(),
     pool: poolId,
-    token: pool.token || "",
+    token: existing?.token || "",
     chainId: event.chainId,
     sender: event.params.sender,
     recipient: event.params.recipient,
@@ -56,8 +45,8 @@ StableV3Pool_Swap_handler(({ event, context }) => {
     sqrtPriceX96: event.params.sqrtPriceX96,
     liquidity: event.params.liquidity,
     tick: event.params.tick,
-    blockNumber: event.blockNumber,
-    blockTimestamp: event.blockTimestamp,
-    transactionHash: event.transactionHash,
+    blockNumber: event.block.number,
+    blockTimestamp: event.block.timestamp,
+    transactionHash: event.transaction.hash,
   });
 });
