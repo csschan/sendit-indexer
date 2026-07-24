@@ -1,0 +1,25 @@
+name: sendit-indexer
+description: Sendit Token Factory - V3 Pool Swap Indexer
+
+networks:
+  # Stable Chain
+  - id: 988
+    rpc_config:
+      url: https://rpc.stable.xyz
+    start_block: 32925000
+    contracts:
+      - name: StableV3Pool
+        address:
+          - "0x3FbE43dA433411e97E20F39648308A0CA92c611C"
+        handler: src/EventHandlers.ts
+        events:
+          - event: Swap(address indexed sender, address indexed recipient, int256 amount0, int256 amount1, uint160 sqrtPriceX96, uint128 liquidity, int24 tick)
+            requiredEntities:
+              - name: LiquidityPool
+
+      - name: StableFactory
+        address:
+          - "0xd0007497ba85229f554C778153189B0d299B058b"
+        handler: src/FactoryHandlers.ts
+        events:
+          - event: TokenCreated(address indexed token, address indexed creator, string name, string symbol, string imageURI, address pool, uint256 positionId, uint256 supply, uint256 initialBuyAmount)

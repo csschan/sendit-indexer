@@ -1,0 +1,43 @@
+type Token @entity {
+  id: String!
+  address: String!
+  creator: String!
+  name: String!
+  symbol: String!
+  imageURI: String!
+  pool: String!
+  chainId: Int!
+  supply: BigInt!
+  createdAt: Int!
+  createdBlock: Int!
+}
+
+type LiquidityPool @entity {
+  id: String!
+  token: String!
+  chainId: Int!
+  tick: BigInt!
+  cumulativeVolume0: BigInt!
+  cumulativeVolume1: BigInt!
+  swapCount: Int!
+  lastPrice: BigInt!
+  lastUpdateTimestamp: BigInt!
+  lastUpdateBlock: BigInt!
+}
+
+type Swap @entity {
+  id: ID!
+  pool: String!
+  token: String!
+  chainId: Int!
+  sender: String!
+  recipient: String!
+  amount0: BigInt!
+  amount1: BigInt!
+  sqrtPriceX96: BigInt!
+  liquidity: BigInt!
+  tick: BigInt!
+  blockNumber: Int!
+  blockTimestamp: Int!
+  transactionHash: String!
+}
