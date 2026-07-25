@@ -12,19 +12,6 @@ type Token @entity {
   createdBlock: Int!
 }
 
-type LiquidityPool @entity {
-  id: String!
-  token: String!
-  chainId: Int!
-  tick: BigInt!
-  cumulativeVolume0: BigInt!
-  cumulativeVolume1: BigInt!
-  swapCount: Int!
-  lastPrice: BigInt!
-  lastUpdateTimestamp: BigInt!
-  lastUpdateBlock: BigInt!
-}
-
 type Swap @entity {
   id: ID!
   pool: String!
