@@ -1,23 +1,26 @@
 import { indexer } from "envio";
 
 indexer.onEvent({ contract: "StableFactory", event: "TokenCreated" } as any, async ({ event, context }: any) => {
+  const tokenAddr = event.params.token.toLowerCase();
+  const poolAddr = event.params.pool.toLowerCase();
+
   context.Token.set({
-    id: event.params.token.toLowerCase(),
-    address: event.params.token.toLowerCase(),
+    id: tokenAddr,
+    address: tokenAddr,
     creator: event.params.creator.toLowerCase(),
     name: event.params.name,
     symbol: event.params.symbol,
     imageURI: event.params.imageURI,
-    pool: event.params.pool.toLowerCase(),
+    pool: poolAddr,
     chainId: event.chainId,
-    supply: event.params.supply,
+    supply: BigInt(event.params.supply.toString()),
     createdAt: event.block.timestamp,
     createdBlock: event.block.number,
   });
 
   context.LiquidityPool.set({
-    id: event.params.pool.toLowerCase(),
-    token: event.params.token.toLowerCase(),
+    id: poolAddr,
+    token: tokenAddr,
     chainId: event.chainId,
     tick: 0n,
     cumulativeVolume0: 0n,

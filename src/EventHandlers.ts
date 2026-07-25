@@ -4,47 +4,38 @@ indexer.onEvent({ contract: "StableV3Pool", event: "Swap" } as any, async ({ eve
   const poolId = event.srcAddress.toLowerCase();
   const existing = await context.LiquidityPool.get(poolId);
 
-  const vol0 = event.params.amount0 < 0n ? -event.params.amount0 : event.params.amount0;
-  const vol1 = event.params.amount1 < 0n ? -event.params.amount1 : event.params.amount1;
+  const a0 = BigInt(event.params.amount0.toString());
+  const a1 = BigInt(event.params.amount1.toString());
+  const vol0 = a0 < 0n ? -a0 : a0;
+  const vol1 = a1 < 0n ? -a1 : a1;
 
-  if (!existing) {
-    context.LiquidityPool.set({
-      id: poolId,
-      token: "",
-      chainId: event.chainId,
-      tick: event.params.tick,
-      cumulativeVolume0: vol0,
-      cumulativeVolume1: vol1,
-      swapCount: 1,
-      lastPrice: event.params.sqrtPriceX96,
-      lastUpdateTimestamp: BigInt(event.block.timestamp),
-      lastUpdateBlock: BigInt(event.block.number),
-    });
-  } else {
-    context.LiquidityPool.set({
-      ...existing,
-      tick: event.params.tick,
-      cumulativeVolume0: existing.cumulativeVolume0 + vol0,
-      cumulativeVolume1: existing.cumulativeVolume1 + vol1,
-      swapCount: existing.swapCount + 1,
-      lastPrice: event.params.sqrtPriceX96,
-      lastUpdateTimestamp: BigInt(event.block.timestamp),
-      lastUpdateBlock: BigInt(event.block.number),
-    });
-  }
+  const newPool = {
+    id: poolId,
+    token: existing?.token || "",
+    chainId: event.chainId,
+    tick: BigInt(event.params.tick.toString()),
+    cumulativeVolume0: (existing?.cumulativeVolume0 || 0n) + vol0,
+    cumulativeVolume1: (existing?.cumulativeVolume1 || 0n) + vol1,
+    swapCount: (existing?.swapCount || 0) + 1,
+    lastPrice: BigInt(event.params.sqrtPriceX96.toString()),
+    lastUpdateTimestamp: BigInt(event.block.timestamp),
+    lastUpdateBlock: BigInt(event.block.number),
+  };
+  context.LiquidityPool.set(newPool);
 
+  const swapId = event.transaction.hash + "-" + String(event.logIndex || 0);
   context.Swap.set({
-    id: event.transaction.hash + "-" + event.logIndex.toString(),
+    id: swapId,
     pool: poolId,
     token: existing?.token || "",
     chainId: event.chainId,
     sender: event.params.sender,
     recipient: event.params.recipient,
-    amount0: event.params.amount0,
-    amount1: event.params.amount1,
-    sqrtPriceX96: event.params.sqrtPriceX96,
-    liquidity: event.params.liquidity,
-    tick: event.params.tick,
+    amount0: a0,
+    amount1: a1,
+    sqrtPriceX96: BigInt(event.params.sqrtPriceX96.toString()),
+    liquidity: BigInt(event.params.liquidity.toString()),
+    tick: BigInt(event.params.tick.toString()),
     blockNumber: event.block.number,
     blockTimestamp: event.block.timestamp,
     transactionHash: event.transaction.hash,
